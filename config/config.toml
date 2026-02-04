@@ -1,0 +1,19 @@
+locale = "en-US"
+max_workers = 5
+max_retries = 3
+max_connections = 10
+timeout = 10
+
+[paths]
+database = "./data/prismatic.db"
+connections = "../../config/connections.toml"
+
+[cache]
+use_cache = true
+time_to_live = 600 # Described in seconds
+
+[logger]
+file_level = "debug"
+file_output = "./log/prismatic.log"
+console_level = "error"
+console_output = "stderr"

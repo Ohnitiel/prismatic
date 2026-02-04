@@ -1,0 +1,9 @@
+[sample_connection]
+engine = "postgresql"
+environment = "production"
+host = "localhost"
+port = 5432
+database = "dbaghu"
+username = "postgres"
+password = ""
+sslmode = "disable"

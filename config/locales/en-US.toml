@@ -1,0 +1,29 @@
+[cli]
+description = "Run the same query across multiple databases with the same structure"
+
+[cli.flags]
+config = "Load configuration from TOML `FILE`"
+environment = "Target environment: [production, replica, staging]"
+connections = "Filter specific connection keys from config"
+output_format = "Force output format `TYPE` (xlsx, json, csv). Overrides file extension"
+no_cache = "Ignores cached results"
+no_single_sheet = "Export each connection to a separate sheet"
+no_single_file = "Create one file per connection"
+commit = "Commit transaction"
+
+[cli.commands]
+export = "Export query result to file"
+run = "Run query"
+check = "Checks connections"
+
+[cli.args]
+export = "[SQL] [DESTINATION]"
+run = "[SQL]"
+
+[errors]
+invalid_environment = "Invalid environment!"
+output_format_not_implemented = "Output format `%s` not implemented."
+output_format_empty = "Could not infer output format or output format is empty!"
+connection_failed = "Connection failed"
+query_failed = "Query execution failed"
+context_deadline = "Context deadline exceeded"
