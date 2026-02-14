@@ -35,15 +35,16 @@ type CacheConfig struct {
 }
 
 type Config struct {
-	Cache          CacheConfig           `toml:"cache"`
-	Locale         string                `toml:"locale"`
-	MaxWorkers     uint8                 `toml:"max_workers"`
-	MaxRetries     uint8                 `toml:"max_retries"`
-	MaxConnections uint8                 `toml:"max_connections"`
-	Timeout        uint8                 `toml:"timeout"`
-	Paths          PathConfigs           `toml:"paths"`
-	Connections    map[string]Connection `toml:"connections"`
-	Logging        LoggerConfigs         `toml:"logger"`
+	Cache                CacheConfig           `toml:"cache"`
+	Locale               string                `toml:"locale"`
+	MaxWorkers           uint8                 `toml:"max_workers"`
+	MaxRetries           uint8                 `toml:"max_retries"`
+	MaxConnections       uint8                 `toml:"max_connections"`
+	Timeout              uint8                 `toml:"timeout"`
+	Paths                PathConfigs           `toml:"paths"`
+	Connections          map[string]Connection `toml:"connections"`
+	Logging              LoggerConfigs         `toml:"logger"`
+	ConnectionColumnName string                `toml:"connection_column_name"`
 }
 
 func (c *Config) validateLoggerConfig() error {
