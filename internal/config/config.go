@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/BurntSushi/toml"
 )
@@ -30,8 +31,9 @@ type PathConfigs struct {
 }
 
 type CacheConfig struct {
-	UseCache   bool `toml:"use_cache"`
-	TimeToLive uint `toml:"time_to_live"`
+	UseCache   bool   `toml:"use_cache"`
+	TimeToLive uint16 `toml:"time_to_live"`
+	MaxAge     time.Duration
 }
 
 type Config struct {
@@ -47,6 +49,35 @@ type Config struct {
 	ConnectionColumnName string                `toml:"connection_column_name"`
 }
 
+func NewConfig() *Config {
+	return &Config{}
+}
+
+func FromFile(path string) (*Config, error) {
+	conf := NewConfig()
+
+	_, err := toml.DecodeFile(path, conf)
+	if err != nil {
+		return nil, fmt.Errorf("Error loading config TOML: %w", err)
+	}
+	conf.Cache.MaxAge = time.Duration(conf.Cache.TimeToLive) * time.Second
+
+	err = conf.loadConnections()
+	if err != nil {
+		return nil, err
+	}
+
+	return conf, nil
+}
+
+func (c *Config) GetConnection(name string) Connection {
+	return c.Connections[name]
+}
+
+func (c *Config) GetConnections() map[string]Connection {
+	return c.Connections
+}
+
 func (c *Config) validateLoggerConfig() error {
 	consoleOutputs := []string{"stderr", "stdout"}
 
@@ -57,31 +88,15 @@ func (c *Config) validateLoggerConfig() error {
 	return nil
 }
 
-func loadConnections(path string) (map[string]Connection, error) {
+func (c *Config) loadConnections() error {
 	var connections map[string]Connection
 
-	_, err := toml.DecodeFile(path, &connections)
+	_, err := toml.DecodeFile(c.Paths.Connections, &connections)
 	if err != nil {
-		return nil, fmt.Errorf("Error loading connections TOML: %w", err)
+		return fmt.Errorf("Error loading connections TOML: %w", err)
 	}
 
-	return connections, nil
-}
+	c.Connections = connections
 
-func Load(path string) (*Config, error) {
-	var conf Config
-
-	_, err := toml.DecodeFile(path, &conf)
-	if err != nil {
-		return nil, fmt.Errorf("Error loading config TOML: %w", err)
-	}
-
-	connections, err := loadConnections(conf.Paths.Connections)
-	if err != nil {
-		return nil, err
-	}
-
-	conf.Connections = connections
-
-	return &conf, nil
+	return nil
 }

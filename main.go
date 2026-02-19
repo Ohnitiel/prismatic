@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	cfg, err := config.Load("./config/config.toml")
+	cfg, err := config.FromFile("./config/config.toml")
 	if err != nil {
 		log.Fatal(err)
 	}

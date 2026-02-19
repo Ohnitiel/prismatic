@@ -7,7 +7,7 @@ connection_column_name = "connection"
 
 [paths]
 database = "./data/prismatic.db"
-connections = "../../config/connections.toml"
+connections = "./config/connections.toml"
 
 [cache]
 use_cache = true

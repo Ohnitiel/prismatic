@@ -27,3 +27,4 @@ output_format_empty = "Não foi possível inferir o formato de saída ou o forma
 connection_failed = "Falha na conexão"
 query_failed = "Falha na execução da consulta"
 context_deadline = "Tempo limite do contexto excedido"
+no_data_returned = "Nenhum dado retornado"

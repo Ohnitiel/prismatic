@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"ohnitiel/prismatic/internal/config"
+	"ohnitiel/prismatic/internal/db"
+	"ohnitiel/prismatic/internal/export"
 	"ohnitiel/prismatic/internal/locale"
 
 	"github.com/urfave/cli-altsrc/v3"
@@ -24,6 +26,20 @@ func validateOutputFormat(format string, l *locale.Locale) error {
 		return fmt.Errorf(l.Errors.OutputFormatNotImpl, format)
 	}
 	return nil
+}
+
+func startQueryingProcess(
+	ctx context.Context, cfg *config.Config, query string,
+	noCache bool, commit bool, command string,
+) (map[string]*db.ResultSet, map[string]error) {
+	manager := db.NewDatabaseManager()
+	manager.LoadConnections(cfg)
+
+	executor := db.NewExecutor(manager)
+	return executor.ParallelExecution(
+		ctx, cfg.MaxWorkers, query,
+		!noCache, commit, cfg, command,
+	)
 }
 
 func Prismatic(cfg *config.Config) {
@@ -79,7 +95,15 @@ func Prismatic(cfg *config.Config) {
 			{
 				Name:      "export",
 				ArgsUsage: l.CLI.Args.Export,
-				Usage:     l.CLI.Commands.Export,
+				Arguments: []cli.Argument{
+					&cli.StringArg{
+						Name: "query",
+					},
+					&cli.StringArg{
+						Name: "output",
+					},
+				},
+				Usage: l.CLI.Commands.Export,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:  "output-format",
@@ -116,10 +140,11 @@ func Prismatic(cfg *config.Config) {
 					},
 				}},
 				Action: func(ctx context.Context, c *cli.Command) error {
-					query := c.Args().Get(0)
-					savePath := c.Args().Get(1)
+					query := c.StringArg("query")
+					output := c.StringArg("output")
+
 					if outputFormat == "" {
-						outputFormat = filepath.Ext(savePath)
+						outputFormat = filepath.Ext(output)
 						if outputFormat == "." {
 							return fmt.Errorf(l.Errors.OutputFormatEmpty)
 						}
@@ -130,13 +155,32 @@ func Prismatic(cfg *config.Config) {
 							return err
 						}
 					}
-					fmt.Println(query)
+
+					data, _ := startQueryingProcess(ctx, cfg, query, noCache, commit, c.Name)
+					if len(data) == 0 {
+						return fmt.Errorf(l.Errors.NoDataReturned)
+					}
+
+					excelOptions := export.NewExcelOptions(
+						!noSingleFile, !noSingleSheet, cfg.ConnectionColumnName,
+					)
+
+					err = export.Excel(ctx, data, output, excelOptions)
+					if err != nil {
+						return err
+					}
+
 					return nil
 				},
 			},
 			{
-				Name:      "run",
-				Usage:     l.CLI.Commands.Run,
+				Name:  "run",
+				Usage: l.CLI.Commands.Run,
+				Arguments: []cli.Argument{
+					&cli.StringArg{
+						Name: "query",
+					},
+				},
 				ArgsUsage: l.CLI.Args.Run,
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
@@ -145,12 +189,13 @@ func Prismatic(cfg *config.Config) {
 						Destination: &commit,
 					},
 				},
-				// Action: nil,
-			},
-			{
-				Name:  "check",
-				Usage: l.CLI.Commands.Check,
-				// Action: nil,
+				Action: func(ctx context.Context, c *cli.Command) error {
+					query := c.StringArg("query")
+
+					startQueryingProcess(ctx, cfg, query, noCache, commit, c.Name)
+
+					return nil
+				},
 			},
 		},
 	}

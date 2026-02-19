@@ -45,6 +45,7 @@ type ErrorsSection struct {
 	ConnectionFailed    string `toml:"connection_failed"`
 	QueryFailed         string `toml:"query_failed"`
 	ContextDeadline     string `toml:"context_deadline"`
+	NoDataReturned      string `toml:"no_data_returned"`
 }
 
 type Locale struct {
