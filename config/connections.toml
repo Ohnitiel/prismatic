@@ -5,5 +5,5 @@ host = "localhost"
 port = 5432
 database = "dbaghu"
 username = "postgres"
-password = "123456"
+password = "${SAMPLE_CONNECTION_PASSWORD}"
 sslmode = "disable"

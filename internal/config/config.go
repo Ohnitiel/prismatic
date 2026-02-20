@@ -2,10 +2,13 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/joho/godotenv"
 )
 
 type Connection struct {
@@ -91,9 +94,23 @@ func (c *Config) validateLoggerConfig() error {
 func (c *Config) loadConnections() error {
 	var connections map[string]Connection
 
-	_, err := toml.DecodeFile(c.Paths.Connections, &connections)
+	err := godotenv.Load()
+	if err != nil {
+		return fmt.Errorf("Error loading .env file: %w", err)
+	}
+
+
+	_, err = toml.DecodeFile(c.Paths.Connections, &connections)
 	if err != nil {
 		return fmt.Errorf("Error loading connections TOML: %w", err)
+	}
+
+	for name, conn := range connections {
+		if strings.HasPrefix(conn.Password, "${") && strings.HasSuffix(conn.Password, "}") {
+			envVar := strings.TrimPrefix(strings.TrimSuffix(conn.Password, "}"), "${")
+			conn.Password = os.Getenv(envVar)
+			connections[name] = conn
+		}
 	}
 
 	c.Connections = connections
