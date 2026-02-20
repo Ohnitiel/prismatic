@@ -19,7 +19,10 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var outputFormats = []string{"xlsx", "json", "csv"}
+var (
+	outputFormats = []string{"xlsx", "json", "csv"}
+	environments  = []string{"production", "replica", "staging"}
+)
 
 func validateOutputFormat(format string, l *locale.Locale) error {
 	if !slices.Contains(outputFormats, strings.ToLower(format)) {
@@ -56,8 +59,6 @@ func Prismatic(cfg *config.Config) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	environments := []string{"production", "replica", "staging"}
 
 	cmd := &cli.Command{
 		Name:        "prismatic",
