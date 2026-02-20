@@ -25,7 +25,7 @@ func Setup(cfg config.LoggerConfigs) error {
 		stdErrLevel = slog.LevelInfo
 	}
 
-	stdErrOpts := &slog.HandlerOptions{Level: stdErrLevel}
+	stdErrOpts := &slog.HandlerOptions{AddSource: true, Level: stdErrLevel}
 	handlers = append(handlers, slog.NewTextHandler(os.Stderr, stdErrOpts))
 
 	if cfg.FileOutput != "" {
@@ -56,7 +56,6 @@ func Setup(cfg config.LoggerConfigs) error {
 	}
 
 	multi := NewMultiHandler(handlers...)
-
 	slog.SetDefault(slog.New(multi))
 
 	return nil

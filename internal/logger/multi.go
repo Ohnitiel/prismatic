@@ -25,9 +25,10 @@ func (m *MultiHandler) Enabled(ctx context.Context, l slog.Level) bool {
 
 func (m *MultiHandler) Handle(ctx context.Context, r slog.Record) error {
 	for _, destHandler := range m.handlers {
-		err := destHandler.Handle(ctx, r)
-		if err != nil {
-			return err
+		if destHandler.Enabled(ctx, r.Level) {
+			if err := destHandler.Handle(ctx, r); err != nil {
+				return err
+			}
 		}
 	}
 
