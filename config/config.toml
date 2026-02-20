@@ -6,7 +6,6 @@ timeout = 10
 connection_column_name = "connection"
 
 [paths]
-database = "./data/prismatic.db"
 connections = "./config/connections.toml"
 
 [cache]
