@@ -1,9 +1,16 @@
 [sample_connection]
 engine = "postgresql"
-environment = "production"
-host = "localhost"
 port = 5432
 database = "dbaghu"
 username = "postgres"
 password = "${SAMPLE_CONNECTION_PASSWORD}"
 sslmode = "disable"
+
+[sample_connection.environment.production]
+host = "localhost"
+
+[sample_connection.environment.staging]
+host = "localhost"
+
+[sample_connection.environment.replica]
+host = "localhost"

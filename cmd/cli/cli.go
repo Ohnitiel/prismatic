@@ -19,10 +19,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var (
-	outputFormats = []string{"xlsx", "json", "csv"}
-	environments  = []string{"production", "replica", "staging"}
-)
+var outputFormats = []string{"xlsx", "json", "csv"}
 
 func validateOutputFormat(format string, l *locale.Locale) error {
 	if !slices.Contains(outputFormats, strings.ToLower(format)) {
@@ -33,10 +30,10 @@ func validateOutputFormat(format string, l *locale.Locale) error {
 
 func startQueryingProcess(
 	ctx context.Context, cfg *config.Config, query string,
-	noCache bool, commit bool, command string,
+	environment string, noCache bool, commit bool, command string,
 ) (map[string]*db.ResultSet, map[string]error) {
 	manager := db.NewDatabaseManager()
-	manager.LoadConnections(cfg)
+	manager.LoadConnections(cfg, environment)
 
 	executor := db.NewExecutor(manager)
 	return executor.ParallelExecution(
@@ -76,12 +73,6 @@ func Prismatic(cfg *config.Config) {
 				Usage:       l.CLI.Flags.Environment,
 				Destination: &environment,
 				Sources:     cli.NewValueSourceChain(toml.TOML("", altsrc.StringSourcer("path"))),
-				Action: func(ctx context.Context, c *cli.Command, s string) error {
-					if !slices.Contains(environments, strings.ToLower(s)) {
-						return fmt.Errorf(l.Errors.InvalidEnvironment)
-					}
-					return nil
-				},
 			},
 			&cli.StringSliceFlag{
 				Name:    "connections",
@@ -157,7 +148,7 @@ func Prismatic(cfg *config.Config) {
 						}
 					}
 
-					data, _ := startQueryingProcess(ctx, cfg, query, noCache, commit, c.Name)
+					data, _ := startQueryingProcess(ctx, cfg, query, environment, noCache, commit, c.Name)
 					if len(data) == 0 {
 						return fmt.Errorf(l.Errors.NoDataReturned)
 					}
@@ -193,7 +184,7 @@ func Prismatic(cfg *config.Config) {
 				Action: func(ctx context.Context, c *cli.Command) error {
 					query := c.StringArg("query")
 
-					startQueryingProcess(ctx, cfg, query, noCache, commit, c.Name)
+					startQueryingProcess(ctx, cfg, query, environment, noCache, commit, c.Name)
 
 					return nil
 				},

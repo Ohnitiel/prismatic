@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
@@ -35,14 +36,20 @@ func (dm *Manager) Close() {
 }
 
 // Loads the database connections from the configuration
-func (dm *Manager) LoadConnections(conf *config.Config) {
+func (dm *Manager) LoadConnections(conf *config.Config, environment string) {
 	dm.connections = make(map[string]Connection)
 
 	for name, conn := range conf.Connections {
+		env := conn.Environment[environment]
+		if env.Disabled {
+			slog.Warn("Environment is disabled", "environment", environment)
+			continue
+		}
+
 		switch conn.Engine {
 		case "postgres", "postgresql":
 			dsn := fmt.Sprintf("host=%s port=%d dbname=%s user=%s password=%s connect_timeout=%d sslmode=%s",
-				conn.Host, conn.Port, conn.Database, conn.Username, conn.Password, conf.Timeout,
+				env.Host, env.Port, env.Database, env.Username, env.Password, conf.Timeout,
 				conn.SSLMode,
 			)
 			db, err := sql.Open("pgx", dsn)
