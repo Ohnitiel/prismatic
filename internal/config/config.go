@@ -136,8 +136,6 @@ func (c *Config) loadConnections() error {
 		return fmt.Errorf("Error loading connections TOML: %w", err)
 	}
 
-	fmt.Println(connections["sample_connection"])
-
 	for _, conn := range connections {
 		conn.Password = getPasswordFromEnv(conn)
 

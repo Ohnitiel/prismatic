@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"ohnitiel/prismatic/internal/db"
@@ -87,7 +88,20 @@ func excelSingleSheet(
 	for name, data := range data {
 		f := excelize.NewFile()
 		f.SetSheetName(f.GetSheetName(0), sheetName)
-		colsWidth, err := writeDataToSheet(f, sheetName, data, "", "")
+
+		sw, err := f.NewStreamWriter(sheetName)
+		if err != nil {
+			return err
+		}
+
+		styles, err := NewStyles(f)
+		if err != nil {
+			return err
+		}
+
+		colsWidth, err := writeDataToSheet(
+			sw, styles, 1, sheetName, data, "", "", true,
+		)
 		if err != nil {
 			slog.ErrorContext(ctx, "Error writing data to sheet", "error", err)
 			return err
@@ -100,6 +114,12 @@ func excelSingleSheet(
 			f.SetColWidth(sheetName, colName, colName, colWidth)
 		}
 		freezeHeader(f, sheetName)
+
+		err = sw.Flush()
+		if err != nil {
+			slog.ErrorContext(ctx, "Error flushing data to sheet", "error", err)
+			return err
+		}
 
 		err = f.SaveAs(output)
 		if err != nil {
@@ -119,9 +139,32 @@ func excelSingleFile(ctx context.Context, data map[string]*db.ResultSet, output 
 		}
 	}()
 
+	styles, err := NewStyles(f)
+	if err != nil {
+		return err
+	}
+
 	for name, data := range data {
 		f.NewSheet(name)
-		colsWidth, err := writeDataToSheet(f, name, data, "", "")
+
+		sw, err := f.NewStreamWriter(name)
+		if err != nil {
+			return err
+		}
+
+		colsWidth, err := writeDataToSheet(
+			sw, styles, 1, name, data, "", "", true,
+		)
+		if err != nil {
+			slog.ErrorContext(ctx, "Error writing data to sheet", "error", err)
+			return err
+		}
+
+		err = sw.Flush()
+		if err != nil {
+			slog.ErrorContext(ctx, "Error flushing data to sheet", "error", err)
+			return err
+		}
 
 		for i, colWidth := range colsWidth {
 			colName, _ := excelize.ColumnNumberToName(i)
@@ -129,15 +172,12 @@ func excelSingleFile(ctx context.Context, data map[string]*db.ResultSet, output 
 		}
 
 		freezeHeader(f, name)
-		if err != nil {
-			slog.ErrorContext(ctx, "Error writing data to sheet", "error", err)
-			return err
-		}
+
 	}
 
 	f.DeleteSheet("Sheet1")
 
-	err := f.SaveAs(output)
+	err = f.SaveAs(output)
 	if err != nil {
 		slog.ErrorContext(ctx, "Error saving file", "error", err)
 		return err
@@ -158,13 +198,36 @@ func excelSingleFileAndSheet(
 		}
 	}()
 
+	styles, err := NewStyles(f)
+	if err != nil {
+		return err
+	}
+
 	f.SetSheetName(f.GetSheetName(0), sheetName)
 	f.SetActiveSheet(0)
 
-	globalWidths := make(map[int]float64)
+	sw, err := f.NewStreamWriter(sheetName)
+	if err != nil {
+		return err
+	}
 
-	for name, data := range data {
-		colsWidth, err := writeDataToSheet(f, sheetName, data, connectionColumnName, name)
+	keys := make([]string, 0, len(data))
+	for k := range data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	currRow := 1
+	addTable := false
+	globalWidths := make(map[int]float64)
+	for k, name := range keys {
+		if k == len(keys)-1 {
+			addTable = true
+		}
+		result := data[name]
+		colsWidth, err := writeDataToSheet(
+			sw, styles, currRow, sheetName, result, name, connectionColumnName, addTable,
+		)
 		if err != nil {
 			slog.ErrorContext(ctx, "Error writing data to sheet", "error", err)
 			return err
@@ -175,6 +238,14 @@ func excelSingleFileAndSheet(
 				globalWidths[idx] = width
 			}
 		}
+
+		currRow += result.RowCount
+	}
+
+	err = sw.Flush()
+	if err != nil {
+		slog.ErrorContext(ctx, "Error flushing data to sheet", "error", err)
+		return err
 	}
 
 	for idx, width := range globalWidths {
@@ -183,7 +254,7 @@ func excelSingleFileAndSheet(
 	}
 
 	freezeHeader(f, sheetName)
-	err := f.SaveAs(output)
+	err = f.SaveAs(output)
 	if err != nil {
 		slog.ErrorContext(ctx, "Error saving file", "error", err)
 		return err
@@ -193,27 +264,18 @@ func excelSingleFileAndSheet(
 }
 
 func writeDataToSheet(
-	f *excelize.File, sheetName string,
-	data *db.ResultSet, connectionName string, connectionColumn string,
+	sw *excelize.StreamWriter, styles *Styles, startRow int,
+	sheetName string, data *db.ResultSet,
+	connectionName string, connectionColumn string, addTable bool,
 ) (map[int]float64, error) {
 	if data.RowCount == 0 {
 		return nil, fmt.Errorf("no data found")
 	}
 
-	sw, err := f.NewStreamWriter(sheetName)
-	if err != nil {
-		return nil, err
-	}
-
-	styles, err := NewStyles(f)
-	if err != nil {
-		return nil, err
-	}
-
 	if connectionName != "" {
 		data.Columns = append(data.Columns, db.Column{
 			Ordinal:  len(data.Columns),
-			Name:     connectionName,
+			Name:     connectionColumn,
 			Type:     "string",
 			Nullable: false,
 		})
@@ -224,12 +286,15 @@ func writeDataToSheet(
 		columns = append(columns, v)
 	}
 
-	headers := make([]any, len(columns))
-	for k, v := range columns {
-		headers[k] = v.Name
-	}
+	if startRow == 1 {
 
-	sw.SetRow("A1", headers)
+		headers := make([]any, len(columns))
+		for k, v := range columns {
+			headers[k] = v.Name
+		}
+
+		sw.SetRow("A1", headers)
+	}
 
 	colStyles := make(map[int]int, len(columns))
 	for k, v := range columns {
@@ -247,12 +312,12 @@ func writeDataToSheet(
 
 	colsWidth := make(map[int]float64, len(columns))
 	for i, row := range data.Rows {
-		rowData := make([]any, len(headers))
+		rowData := make([]any, len(columns))
 
 		for j := range columns {
 			var val any
-			if columns[j].Name == connectionName {
-				val = connectionColumn
+			if columns[j].Name == connectionColumn {
+				val = connectionName
 			} else {
 				val = row[j]
 			}
@@ -269,27 +334,29 @@ func writeDataToSheet(
 			colsWidth[j] = max(colsWidth[j], float64(len(fmt.Sprintf("%v", val))))
 		}
 
-		cell, _ := excelize.CoordinatesToCellName(1, i+2)
+		cell, _ := excelize.CoordinatesToCellName(1, i+1+startRow)
 		sw.SetRow(cell, rowData)
 	}
 
-	lastCell, _ := excelize.CoordinatesToCellName(len(columns), data.RowCount+1)
+	lastCell, _ := excelize.CoordinatesToCellName(len(columns), data.RowCount+startRow)
 
-	enabled := true
-	err = sw.AddTable(&excelize.Table{
-		Range:             fmt.Sprintf("A1:%s", lastCell),
-		Name:              fmt.Sprintf("Tabela_%s", sheetName),
-		StyleName:         "TableStyleMedium2",
-		ShowFirstColumn:   false,
-		ShowLastColumn:    false,
-		ShowRowStripes:    &enabled,
-		ShowColumnStripes: false,
-	})
-	if err != nil {
-		return nil, err
+	if addTable {
+		enabled := true
+		err := sw.AddTable(&excelize.Table{
+			Range:             fmt.Sprintf("A1:%s", lastCell),
+			Name:              fmt.Sprintf("Tabela_%s", sheetName),
+			StyleName:         "TableStyleMedium2",
+			ShowFirstColumn:   false,
+			ShowLastColumn:    false,
+			ShowRowStripes:    &enabled,
+			ShowColumnStripes: false,
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return colsWidth, sw.Flush()
+	return colsWidth, nil
 }
 
 func freezeHeader(f *excelize.File, sheetName string) {
