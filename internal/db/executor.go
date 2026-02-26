@@ -7,6 +7,7 @@ import (
 
 	"ohnitiel/prismatic/internal/config"
 	"ohnitiel/prismatic/internal/db/sql"
+	"ohnitiel/prismatic/internal/locale"
 )
 
 type Executor struct {
@@ -41,22 +42,22 @@ func (ex *Executor) ParallelExecution(
 
 	queryType, err := sql.SimpleQueryIdentifier(query)
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to identify query type")
+		slog.WarnContext(ctx, locale.L.Logs.UnableIdentifyQueryType)
 	}
-	slog.InfoContext(ctx, "Identified query type", "query_type", queryType)
+	slog.InfoContext(ctx, locale.L.Logs.IdentifiedQueryType, "query_type", queryType)
 
 	if command == "run" && queryType == sql.DQL {
-		slog.WarnContext(ctx, "Running SELECT query without saving results")
+		slog.WarnContext(ctx, locale.L.Logs.RunningSelectWithoutSaving)
 	}
 
 	for name, conn := range ex.manager.connections {
 		if conn.err != nil {
-			slog.ErrorContext(ctx, "Skipping connection due to error", "connection", name, "error", conn.err)
+			slog.ErrorContext(ctx, locale.L.Logs.SkippingConnectionError, "connection", name, "error", conn.err)
 			continue
 		}
 
 		if conn.db == nil {
-			slog.WarnContext(ctx, "Running query on connection", "connection", name)
+			slog.WarnContext(ctx, locale.L.Logs.RunningQueryOnConn, "connection", name)
 			continue
 		}
 
@@ -69,14 +70,14 @@ func (ex *Executor) ParallelExecution(
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			slog.InfoContext(ctx, "Running query on connection", "connection", name)
+			slog.InfoContext(ctx, locale.L.Logs.RunningQueryOnConn, "connection", name)
 
 			res, err := conn.ExecuteQuery(ctx, query, useCache, commitTransaction, conf, name, command)
 
 			if err != nil {
-				slog.ErrorContext(ctx, "Error running query on connection", "connection", name, "error", err)
+				slog.ErrorContext(ctx, locale.L.Logs.ErrorRunningQueryOnConn, "connection", name, "error", err)
 			} else {
-				slog.InfoContext(ctx, "Query successful on connection", "connection", name)
+				slog.InfoContext(ctx, locale.L.Logs.QuerySuccessfulOnConn, "connection", name)
 			}
 
 			resChann <- result{name: name, data: res, err: err}

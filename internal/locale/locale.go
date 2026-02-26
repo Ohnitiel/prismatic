@@ -51,7 +51,38 @@ type ErrorsSection struct {
 type Locale struct {
 	CLI    CliSection    `toml:"cli"`
 	Errors ErrorsSection `toml:"errors"`
+	Logs   LogsSection   `toml:"logs"`
 }
+
+type LogsSection struct {
+	CommittingTransaction      string `toml:"committing_transaction"`
+	ConnectionFailed           string `toml:"connection_failed"`
+	ContextAlreadyCancelled    string `toml:"context_already_cancelled"`
+	ErrorClosingFile           string `toml:"error_closing_file"`
+	ErrorFlushingData          string `toml:"error_flushing_data"`
+	ErrorIdentifyingColumns    string `toml:"error_identifying_columns"`
+	ErrorPreparingStatement    string `toml:"error_preparing_statement"`
+	ErrorRunningQuery          string `toml:"error_running_query"`
+	ErrorRunningQueryOnConn    string `toml:"error_running_query_on_conn"`
+	ErrorSavingFile            string `toml:"error_saving_file"`
+	ErrorScanningRows          string `toml:"error_scanning_rows"`
+	ErrorStartingTransaction   string `toml:"error_starting_transaction"`
+	ErrorWritingData           string `toml:"error_writing_data"`
+	GenericRowError            string `toml:"generic_row_error"`
+	IdentifiedQueryType        string `toml:"identified_query_type"`
+	NoHostSpecified            string `toml:"no_host_specified"`
+	QueryResultCache           string `toml:"query_result_cache"`
+	QuerySuccessfulOnConn      string `toml:"query_successful_on_conn"`
+	RollingBackTransaction     string `toml:"rolling_back_transaction"`
+	RunningSelectWithoutSaving string `toml:"running_select_without_saving"`
+	RunningQueryOnConn         string `toml:"running_query_on_conn"`
+	SkippingConnectionError    string `toml:"skipping_connection_error"`
+	UnableIdentifyQueryType    string `toml:"unable_identify_query_type"`
+	CacheEntryExpired          string `toml:"cache_entry_expired"`
+	EnvDisabled                string `toml:"env_disabled"`
+}
+
+var L *Locale
 
 func DetectSystemLocale() string {
 	lang := os.Getenv("LANG")

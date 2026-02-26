@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"ohnitiel/prismatic/internal/db"
+	"ohnitiel/prismatic/internal/locale"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -103,7 +104,7 @@ func excelSingleSheet(
 			sw, styles, 1, sheetName, data, "", "", true,
 		)
 		if err != nil {
-			slog.ErrorContext(ctx, "Error writing data to sheet", "error", err)
+			slog.ErrorContext(ctx, locale.L.Logs.ErrorWritingData, "error", err)
 			return err
 		}
 		outputExt := filepath.Ext(output)
@@ -117,13 +118,13 @@ func excelSingleSheet(
 
 		err = sw.Flush()
 		if err != nil {
-			slog.ErrorContext(ctx, "Error flushing data to sheet", "error", err)
+			slog.ErrorContext(ctx, locale.L.Logs.ErrorFlushingData, "error", err)
 			return err
 		}
 
 		err = f.SaveAs(output)
 		if err != nil {
-			slog.ErrorContext(ctx, "Error saving file", "error", err)
+			slog.ErrorContext(ctx, locale.L.Logs.ErrorSavingFile, "error", err)
 			return err
 		}
 	}
@@ -135,7 +136,7 @@ func excelSingleFile(ctx context.Context, data map[string]*db.ResultSet, output 
 	f := excelize.NewFile()
 	defer func() {
 		if err := f.Close(); err != nil {
-			slog.ErrorContext(ctx, "Error closing file", "error", err)
+			slog.ErrorContext(ctx, locale.L.Logs.ErrorClosingFile, "error", err)
 		}
 	}()
 
@@ -156,13 +157,13 @@ func excelSingleFile(ctx context.Context, data map[string]*db.ResultSet, output 
 			sw, styles, 1, name, data, "", "", true,
 		)
 		if err != nil {
-			slog.ErrorContext(ctx, "Error writing data to sheet", "error", err)
+			slog.ErrorContext(ctx, locale.L.Logs.ErrorWritingData, "error", err)
 			return err
 		}
 
 		err = sw.Flush()
 		if err != nil {
-			slog.ErrorContext(ctx, "Error flushing data to sheet", "error", err)
+			slog.ErrorContext(ctx, locale.L.Logs.ErrorFlushingData, "error", err)
 			return err
 		}
 
@@ -179,7 +180,7 @@ func excelSingleFile(ctx context.Context, data map[string]*db.ResultSet, output 
 
 	err = f.SaveAs(output)
 	if err != nil {
-		slog.ErrorContext(ctx, "Error saving file", "error", err)
+		slog.ErrorContext(ctx, locale.L.Logs.ErrorSavingFile, "error", err)
 		return err
 	}
 
@@ -194,7 +195,7 @@ func excelSingleFileAndSheet(
 	f := excelize.NewFile()
 	defer func() {
 		if err := f.Close(); err != nil {
-			slog.ErrorContext(ctx, "Error closing file", "error", err)
+			slog.ErrorContext(ctx, locale.L.Logs.ErrorClosingFile, "error", err)
 		}
 	}()
 
@@ -229,7 +230,7 @@ func excelSingleFileAndSheet(
 			sw, styles, currRow, sheetName, result, name, connectionColumnName, addTable,
 		)
 		if err != nil {
-			slog.ErrorContext(ctx, "Error writing data to sheet", "error", err)
+			slog.ErrorContext(ctx, locale.L.Logs.ErrorWritingData, "error", err)
 			return err
 		}
 
@@ -244,7 +245,7 @@ func excelSingleFileAndSheet(
 
 	err = sw.Flush()
 	if err != nil {
-		slog.ErrorContext(ctx, "Error flushing data to sheet", "error", err)
+		slog.ErrorContext(ctx, locale.L.Logs.ErrorFlushingData, "error", err)
 		return err
 	}
 
@@ -256,7 +257,7 @@ func excelSingleFileAndSheet(
 	freezeHeader(f, sheetName)
 	err = f.SaveAs(output)
 	if err != nil {
-		slog.ErrorContext(ctx, "Error saving file", "error", err)
+		slog.ErrorContext(ctx, locale.L.Logs.ErrorSavingFile, "error", err)
 		return err
 	}
 

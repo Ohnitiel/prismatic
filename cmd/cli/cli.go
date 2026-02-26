@@ -138,7 +138,7 @@ func Prismatic(cfg *config.Config) {
 					if outputFormat == "" {
 						outputFormat = filepath.Ext(output)
 						if outputFormat == "." {
-							return fmt.Errorf(l.Errors.OutputFormatEmpty)
+							return fmt.Errorf("%s", l.Errors.OutputFormatEmpty)
 						}
 						outputFormat = outputFormat[1:]
 					} else {
@@ -150,7 +150,7 @@ func Prismatic(cfg *config.Config) {
 
 					data, _ := startQueryingProcess(ctx, cfg, query, environment, noCache, commit, c.Name)
 					if len(data) == 0 {
-						return fmt.Errorf(l.Errors.NoDataReturned)
+						return fmt.Errorf("%s", l.Errors.NoDataReturned)
 					}
 
 					excelOptions := export.NewExcelOptions(

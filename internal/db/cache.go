@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"sync"
 	"time"
+
+	"ohnitiel/prismatic/internal/locale"
 )
 
 type CacheEntry struct {
@@ -47,7 +49,7 @@ func (c *Cache) Get(connectionName string, query string) ([]map[string]any, bool
 	}
 
 	if time.Since(entry.Timestamp) > c.maxAge {
-		slog.Info("Cache entry expired", "connection", connectionName, "query", query)
+		slog.Info(locale.L.Logs.CacheEntryExpired, "connection", connectionName, "query", query)
 		return nil, false
 	}
 

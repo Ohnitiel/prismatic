@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"ohnitiel/prismatic/internal/locale"
+
 	"github.com/BurntSushi/toml"
 	"github.com/joho/godotenv"
 )
@@ -103,7 +105,7 @@ func (c *Config) validateLoggerConfig() error {
 
 func (c *Connection) Resolve(env *Environment) {
 	if env.Host == "" {
-		slog.Warn("No host specified in environment. Environment will be disabled.")
+		slog.Warn(locale.L.Logs.NoHostSpecified)
 		env.Disabled = true
 		return
 	}

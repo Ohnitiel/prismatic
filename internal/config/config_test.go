@@ -4,10 +4,16 @@ import (
 	"fmt"
 	"log"
 	"testing"
+
+	"ohnitiel/prismatic/internal/locale"
 )
 
 func TestFileLoad(t *testing.T) {
-	cfg, err := Load("../../config/config.toml")
+	_, err := locale.Load("")
+	if err != nil {
+		log.Fatalf("Failed to load locale: %v", err)
+	}
+	cfg, err := FromFile("../../config/config.toml")
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}

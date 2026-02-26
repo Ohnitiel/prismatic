@@ -10,6 +10,7 @@ import (
 	_ "github.com/jackc/pgx/v5"
 
 	"ohnitiel/prismatic/internal/config"
+	"ohnitiel/prismatic/internal/locale"
 )
 
 type state int
@@ -34,7 +35,7 @@ func (c *Connection) TestConnection(name string, maxAttempts uint8) bool {
 	for attempt = 1; attempt <= maxAttempts; attempt++ {
 		err := c.db.Ping()
 		if err != nil {
-			slog.Warn("Connection failed",
+			slog.Warn(locale.L.Logs.ConnectionFailed,
 				"connection", name,
 				"attempt", attempt,
 				"max_attempts", maxAttempts,
@@ -58,41 +59,41 @@ func (c *Connection) ExecuteQuery(
 	name string, command string,
 ) (*ResultSet, error) {
 	if ctx.Err() != nil {
-		slog.ErrorContext(ctx, "Context already cancelled", "connection", name)
+		slog.ErrorContext(ctx, locale.L.Logs.ContextAlreadyCancelled, "connection", name)
 		return nil, ctx.Err()
 	}
 
 	// if useCache {
 	// 	if results, ok := cache.Get(name, query); ok {
-	// 		slog.InfoContext(ctx, "Query result found in cache", "connection", name)
+	// 		slog.InfoContext(ctx, locale.L.Logs.QueryResultCache, "connection", name)
 	// 		return results, nil
 	// 	}
 	// }
 
 	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
-		slog.ErrorContext(ctx, "Error starting transaction", "connection", name, "error", err)
+		slog.ErrorContext(ctx, locale.L.Logs.ErrorStartingTransaction, "connection", name, "error", err)
 		return nil, err
 	}
 
 	if commitTransaction {
-		defer slog.InfoContext(ctx, "Committing transaction", "connection", name)
+		defer slog.InfoContext(ctx, locale.L.Logs.CommittingTransaction, "connection", name)
 		defer tx.Commit()
 	} else {
-		defer slog.InfoContext(ctx, "Rolling back transaction", "connection", name)
+		defer slog.InfoContext(ctx, locale.L.Logs.RollingBackTransaction, "connection", name)
 		defer tx.Rollback()
 	}
 
 	stmt, err := tx.PrepareContext(ctx, query)
 	if err != nil {
-		slog.ErrorContext(ctx, "Error preparing statement", "connection", name, "error", err)
+		slog.ErrorContext(ctx, locale.L.Logs.ErrorPreparingStatement, "connection", name, "error", err)
 		return nil, err
 	}
 	defer stmt.Close()
 
 	rows, err := stmt.QueryContext(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Error running query", "error", err)
+		slog.ErrorContext(ctx, locale.L.Logs.ErrorRunningQuery, "error", err)
 		return nil, fmt.Errorf("error running query: %w", err)
 	}
 	defer rows.Close()
@@ -100,7 +101,7 @@ func (c *Connection) ExecuteQuery(
 	if command == "export" {
 		res, err := getQueryResults(ctx, rows)
 		if err != nil {
-			slog.ErrorContext(ctx, "Error running query", "connection", name, "error", err)
+			slog.ErrorContext(ctx, locale.L.Logs.ErrorRunningQuery, "connection", name, "error", err)
 			return nil, err
 		}
 
@@ -119,7 +120,7 @@ func getQueryResults(ctx context.Context, rows *sql.Rows) (*ResultSet, error) {
 
 	cols, err := rows.ColumnTypes()
 	if err != nil {
-		slog.ErrorContext(ctx, "Error identifying columns", "error", err)
+		slog.ErrorContext(ctx, locale.L.Logs.ErrorIdentifyingColumns, "error", err)
 		return nil, fmt.Errorf("error identifying columns: %w", err)
 	}
 
@@ -151,7 +152,7 @@ func getQueryResults(ctx context.Context, rows *sql.Rows) (*ResultSet, error) {
 		}
 
 		if err := rows.Scan(colPointers...); err != nil {
-			slog.ErrorContext(ctx, "Error scanning rows", "error", err)
+			slog.ErrorContext(ctx, locale.L.Logs.ErrorScanningRows, "error", err)
 			return nil, fmt.Errorf("error scanning rows: %w", err)
 		}
 
@@ -169,7 +170,7 @@ func getQueryResults(ctx context.Context, rows *sql.Rows) (*ResultSet, error) {
 	}
 
 	if err = rows.Err(); err != nil {
-		slog.ErrorContext(ctx, "Generic row error", "error", err)
+		slog.ErrorContext(ctx, locale.L.Logs.GenericRowError, "error", err)
 		return nil, fmt.Errorf("generic row error: %w", err)
 	}
 

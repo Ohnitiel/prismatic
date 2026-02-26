@@ -6,8 +6,8 @@ import (
 	"log/slog"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-
 	"ohnitiel/prismatic/internal/config"
+	"ohnitiel/prismatic/internal/locale"
 )
 
 // Manager is a thread-safe manager for database connections
@@ -42,7 +42,7 @@ func (dm *Manager) LoadConnections(conf *config.Config, environment string) {
 	for name, conn := range conf.Connections {
 		env := conn.Environment[environment]
 		if env.Disabled {
-			slog.Warn("Environment is disabled", "environment", environment)
+			slog.Warn(locale.L.Logs.EnvDisabled, "environment", environment)
 			continue
 		}
 
