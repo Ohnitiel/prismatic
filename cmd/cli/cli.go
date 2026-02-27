@@ -19,6 +19,12 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+const (
+	ExitCodeSuccess = 0
+	ExitCodeFullFailure = 101
+	ExitCodePartialFailure = 102
+)
+
 var outputFormats = []string{"xlsx", "json", "csv"}
 
 func validateOutputFormat(format string, l *locale.Locale) error {
@@ -184,9 +190,15 @@ func Prismatic(cfg *config.Config) {
 				Action: func(ctx context.Context, c *cli.Command) error {
 					query := c.StringArg("query")
 
-					startQueryingProcess(ctx, cfg, query, environment, noCache, commit, c.Name)
+					success, failures :=startQueryingProcess(ctx, cfg, query, environment, noCache, commit, c.Name)
 
-					return nil
+					if len(failures) > 0 && len(success) == 0 {
+						return cli.Exit("All queries failed", ExitCodeFullFailure)
+					} else if len(failures) > 0 {
+						return cli.Exit("Some queries failed", ExitCodePartialFailure)
+					} else {
+						return cli.Exit("Success", ExitCodeSuccess)
+					}
 				},
 			},
 		},

@@ -59,20 +59,6 @@ func (ex *Executor) ParallelExecution(
 	}
 
 	for name, conn := range ex.manager.connections {
-		if conn.err != nil {
-			slog.ErrorContext(ctx, locale.L.Logs.SkippingConnectionError, "connection", name, "error", conn.err)
-			summary.Errors[name] = conn.err
-			summary.Failed++
-			continue
-		}
-
-		if conn.db == nil {
-			slog.WarnContext(ctx, locale.L.Logs.RunningQueryOnConn, "connection", name)
-			summary.Errors[name] = conn.err
-			summary.Failed++
-			continue
-		}
-
 		wg.Add(1)
 		name, conn := name, conn
 
@@ -81,6 +67,25 @@ func (ex *Executor) ParallelExecution(
 
 			sem <- struct{}{}
 			defer func() { <-sem }()
+
+			if conn.err != nil {
+				slog.ErrorContext(ctx, locale.L.Logs.SkippingConnectionError, "connection", name, "error", conn.err)
+				summary.Errors[name] = conn.err
+				summary.Failed++
+				fmt.Println("Inside conn.err")
+				resChann <- result{name: name, data: nil, err: conn.err}
+				return
+			}
+
+			if conn.db == nil {
+				slog.WarnContext(ctx, locale.L.Logs.RunningQueryOnConn, "connection", name)
+				err = fmt.Errorf("connection to %s is null", name)
+				summary.Errors[name] = err
+				summary.Failed++
+				fmt.Println("Null db")
+				resChann <- result{name: name, data: nil, err: err}
+				return
+			}
 
 			slog.InfoContext(ctx, locale.L.Logs.RunningQueryOnConn, "connection", name)
 
@@ -96,7 +101,6 @@ func (ex *Executor) ParallelExecution(
 			}
 
 			resChann <- result{name: name, data: res, err: err}
-
 		}()
 	}
 
@@ -110,6 +114,7 @@ func (ex *Executor) ParallelExecution(
 	errors := make(map[string]error)
 	for r := range resChann {
 		if r.err != nil {
+			fmt.Println(r.name)
 			errors[r.name] = r.err
 		} else {
 			results[r.name] = r.data
