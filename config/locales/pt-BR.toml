@@ -29,6 +29,11 @@ query_failed = "Falha na execução da consulta"
 context_deadline = "Tempo limite do contexto excedido"
 no_data_returned = "Nenhum dado retornado"
 
+[exit_messages]
+success = "Sucesso!"
+full_fail = "Todas as conexões falharam!"
+partial_fail = "Algumas conexões falharam!"
+
 [logs]
 cache_entry_expired = "Entrada de cache expirada"
 committing_transaction = "Confirmando (committing) transação"

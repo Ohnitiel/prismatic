@@ -48,10 +48,17 @@ type ErrorsSection struct {
 	NoDataReturned      string `toml:"no_data_returned"`
 }
 
+type ExitMessages struct {
+	Success     string `toml:"success"`
+	PartialFail string `toml:"partial_fail"`
+	FullFail    string `toml:"full_fail"`
+}
+
 type Locale struct {
 	CLI    CliSection    `toml:"cli"`
 	Errors ErrorsSection `toml:"errors"`
 	Logs   LogsSection   `toml:"logs"`
+	Exit   ExitMessages  `toml:"exit_messages"`
 }
 
 type LogsSection struct {
