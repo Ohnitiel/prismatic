@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	ExitCodeSuccess = 0
-	ExitCodeFullFailure = 101
+	ExitCodeSuccess        = 0
+	ExitCodeFullFailure    = 101
 	ExitCodePartialFailure = 102
 )
 
@@ -37,14 +37,16 @@ func validateOutputFormat(format string, l *locale.Locale) error {
 func startQueryingProcess(
 	ctx context.Context, cfg *config.Config, query string,
 	environment string, noCache bool, commit bool, command string,
+	connections []string,
 ) (map[string]*db.ResultSet, map[string]error) {
 	manager := db.NewDatabaseManager()
-	manager.LoadConnections(ctx, cfg, environment)
+	manager.LoadConnections(ctx, cfg, environment, connections)
 
 	executor := db.NewExecutor(manager)
 	return executor.ParallelExecution(
 		ctx, cfg.MaxWorkers, query,
 		!noCache, commit, cfg, command,
+		connections,
 	)
 }
 
@@ -154,7 +156,7 @@ func Prismatic(cfg *config.Config) {
 						}
 					}
 
-					data, _ := startQueryingProcess(ctx, cfg, query, environment, noCache, commit, c.Name)
+					data, _ := startQueryingProcess(ctx, cfg, query, environment, noCache, commit, c.Name, connections)
 					if len(data) == 0 {
 						return fmt.Errorf("%s", l.Errors.NoDataReturned)
 					}
@@ -190,7 +192,7 @@ func Prismatic(cfg *config.Config) {
 				Action: func(ctx context.Context, c *cli.Command) error {
 					query := c.StringArg("query")
 
-					success, failures :=startQueryingProcess(ctx, cfg, query, environment, noCache, commit, c.Name)
+					success, failures := startQueryingProcess(ctx, cfg, query, environment, noCache, commit, c.Name, connections)
 
 					if len(failures) > 0 && len(success) == 0 {
 						return cli.Exit(locale.L.ExitMessages.FullFail, ExitCodeFullFailure)

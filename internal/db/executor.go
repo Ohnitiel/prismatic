@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"slices"
 	"sync"
 
 	"ohnitiel/prismatic/internal/config"
@@ -36,6 +37,7 @@ func NewExecutor(manager *Manager) *Executor {
 func (ex *Executor) ParallelExecution(
 	ctx context.Context, workers uint8, query string, useCache bool,
 	commitTransaction bool, conf *config.Config, command string,
+	connections []string,
 ) (map[string]*ResultSet, map[string]error) {
 	type result struct {
 		name string
@@ -59,6 +61,10 @@ func (ex *Executor) ParallelExecution(
 	}
 
 	for name, conn := range ex.manager.connections {
+		if !slices.Contains(connections, name) {
+			continue
+		}
+
 		wg.Add(1)
 		name, conn := name, conn
 

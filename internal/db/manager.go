@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"slices"
 	"sync"
 
 	"ohnitiel/prismatic/internal/config"
@@ -39,7 +40,7 @@ func (dm *Manager) Close() {
 }
 
 // Loads the database connections from the configuration
-func (dm *Manager) LoadConnections(ctx context.Context, conf *config.Config, environment string) {
+func (dm *Manager) LoadConnections(ctx context.Context, conf *config.Config, environment string, connections []string) {
 	var wg sync.WaitGroup
 
 	dm.connections = make(map[string]*Connection)
@@ -69,6 +70,10 @@ func (dm *Manager) LoadConnections(ctx context.Context, conf *config.Config, env
 			} else {
 				dm.connections[name] = &Connection{db: db}
 			}
+		}
+
+		if !slices.Contains(connections, name) {
+			continue
 		}
 
 		wg.Add(1)
