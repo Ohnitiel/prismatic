@@ -55,3 +55,10 @@ running_select_without_saving = "Executando consulta SELECT sem salvar os result
 running_query_on_conn = "Executando consulta na conexão"
 skipping_connection_error = "Pulando conexão devido a erro"
 unable_identify_query_type = "Não foi possível identificar o tipo de consulta"
+query_summary = '''
+Resumo da consulta:
+✔️ Conexões bem sucedidas: `%d`
+❌ Conexões falhadas: `%d`
+
+Verifique o log para mais detalhes.
+'''

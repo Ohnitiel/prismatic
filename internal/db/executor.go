@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 
@@ -13,6 +14,12 @@ import (
 type Executor struct {
 	manager *Manager
 	// cache   *Cache
+}
+
+type Summary struct {
+	Sucessful int
+	Failed    int
+	Errors    map[string]error
 }
 
 func NewExecutor(manager *Manager) *Executor {
@@ -36,6 +43,7 @@ func (ex *Executor) ParallelExecution(
 		err  error
 	}
 	var wg sync.WaitGroup
+	summary := Summary{Errors: make(map[string]error)}
 
 	resChann := make(chan result, len(ex.manager.connections))
 	sem := make(chan struct{}, workers)
@@ -53,11 +61,15 @@ func (ex *Executor) ParallelExecution(
 	for name, conn := range ex.manager.connections {
 		if conn.err != nil {
 			slog.ErrorContext(ctx, locale.L.Logs.SkippingConnectionError, "connection", name, "error", conn.err)
+			summary.Errors[name] = conn.err
+			summary.Failed++
 			continue
 		}
 
 		if conn.db == nil {
 			slog.WarnContext(ctx, locale.L.Logs.RunningQueryOnConn, "connection", name)
+			summary.Errors[name] = conn.err
+			summary.Failed++
 			continue
 		}
 
@@ -76,17 +88,22 @@ func (ex *Executor) ParallelExecution(
 
 			if err != nil {
 				slog.ErrorContext(ctx, locale.L.Logs.ErrorRunningQueryOnConn, "connection", name, "error", err)
+				summary.Failed++
+				summary.Errors[name] = err
 			} else {
 				slog.InfoContext(ctx, locale.L.Logs.QuerySuccessfulOnConn, "connection", name)
+				summary.Sucessful++
 			}
 
 			resChann <- result{name: name, data: res, err: err}
+
 		}()
 	}
 
 	go func() {
 		wg.Wait()
 		close(resChann)
+		close(sem)
 	}()
 
 	results := make(map[string]*ResultSet)
@@ -98,6 +115,9 @@ func (ex *Executor) ParallelExecution(
 			results[r.name] = r.data
 		}
 	}
+
+	textSummary := fmt.Sprintf(locale.L.Logs.QuerySummary, summary.Sucessful, summary.Failed)
+	fmt.Println(textSummary)
 
 	return results, errors
 }

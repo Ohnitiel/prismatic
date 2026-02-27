@@ -80,6 +80,7 @@ type LogsSection struct {
 	UnableIdentifyQueryType    string `toml:"unable_identify_query_type"`
 	CacheEntryExpired          string `toml:"cache_entry_expired"`
 	EnvDisabled                string `toml:"env_disabled"`
+	QuerySummary               string `toml:"query_summary"`
 }
 
 var L *Locale

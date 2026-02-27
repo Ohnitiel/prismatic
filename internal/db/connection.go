@@ -30,12 +30,12 @@ type Connection struct {
 // Tests the connection.
 // Retuns true if the connection is active.
 // Will attempt up to maxAttempts to handle transient errors
-func (c *Connection) TestConnection(name string, maxAttempts uint8) bool {
+func (c *Connection) TestConnection(ctx context.Context, name string, maxAttempts uint8) bool {
 	var attempt uint8
 	for attempt = 1; attempt <= maxAttempts; attempt++ {
-		err := c.db.Ping()
+		err := c.db.PingContext(ctx)
 		if err != nil {
-			slog.Warn(locale.L.Logs.ConnectionFailed,
+			slog.WarnContext(ctx, locale.L.Logs.ConnectionFailed,
 				"connection", name,
 				"attempt", attempt,
 				"max_attempts", maxAttempts,
@@ -46,6 +46,7 @@ func (c *Connection) TestConnection(name string, maxAttempts uint8) bool {
 			return true
 		}
 	}
+	slog.ErrorContext(ctx, locale.L.Logs.ConnectionFailed)
 	c.err = fmt.Errorf("connection to %s timeout", name)
 
 	return false

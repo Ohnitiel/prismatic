@@ -1,5 +1,5 @@
-# locale = "en-US"
-locale = "pt-BR"
+locale = "en-US"
+# locale = "pt-BR"
 max_workers = 5
 max_retries = 3
 max_connections = 10
@@ -16,5 +16,5 @@ time_to_live = 600 # Described in seconds
 [logger]
 file_level = "debug"
 file_output = "./log/prismatic.log"
-console_level = "error"
+console_level = "info"
 console_output = "stderr"

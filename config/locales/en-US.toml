@@ -55,3 +55,10 @@ running_select_without_saving = "Running SELECT query without saving results"
 running_query_on_conn = "Running query on connection"
 skipping_connection_error = "Skipping connection due to error"
 unable_identify_query_type = "Unable to identify query type"
+query_summary = '''
+Query summary:
+✔️ Successful connections: `%d`
+❌ Failed connections: `%d`
+
+Check the log for more details.
+'''

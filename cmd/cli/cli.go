@@ -33,7 +33,7 @@ func startQueryingProcess(
 	environment string, noCache bool, commit bool, command string,
 ) (map[string]*db.ResultSet, map[string]error) {
 	manager := db.NewDatabaseManager()
-	manager.LoadConnections(cfg, environment)
+	manager.LoadConnections(ctx, cfg, environment)
 
 	executor := db.NewExecutor(manager)
 	return executor.ParallelExecution(

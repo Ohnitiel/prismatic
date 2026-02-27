@@ -1,29 +1,32 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"sync"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"ohnitiel/prismatic/internal/config"
 	"ohnitiel/prismatic/internal/locale"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 // Manager is a thread-safe manager for database connections
 type Manager struct {
-	connections map[string]Connection
+	connections map[string]*Connection
 }
 
 func NewDatabaseManager() *Manager {
 	return &Manager{}
 }
 
-func (dm *Manager) GetConnection(name string) Connection {
+func (dm *Manager) GetConnection(name string) *Connection {
 	return dm.connections[name]
 }
 
-func (dm *Manager) GetConnections() map[string]Connection {
+func (dm *Manager) GetConnections() map[string]*Connection {
 	return dm.connections
 }
 
@@ -36,13 +39,19 @@ func (dm *Manager) Close() {
 }
 
 // Loads the database connections from the configuration
-func (dm *Manager) LoadConnections(conf *config.Config, environment string) {
-	dm.connections = make(map[string]Connection)
+func (dm *Manager) LoadConnections(ctx context.Context, conf *config.Config, environment string) {
+	var wg sync.WaitGroup
+
+	dm.connections = make(map[string]*Connection)
+	sem := make(chan struct{}, conf.MaxWorkers)
 
 	for name, conn := range conf.Connections {
 		env := conn.Environment[environment]
+		if env == nil {
+			continue
+		}
 		if env.Disabled {
-			slog.Warn(locale.L.Logs.EnvDisabled, "environment", environment)
+			slog.WarnContext(ctx, locale.L.Logs.EnvDisabled, "environment", environment)
 			continue
 		}
 
@@ -54,12 +63,27 @@ func (dm *Manager) LoadConnections(conf *config.Config, environment string) {
 			)
 			db, err := sql.Open("pgx", dsn)
 			if err != nil {
-				dm.connections[name] = Connection{
+				dm.connections[name] = &Connection{
 					err: fmt.Errorf("unable to connect to %s: %w", conn.Host, err),
 				}
 			} else {
-				dm.connections[name] = Connection{db: db}
+				dm.connections[name] = &Connection{db: db}
 			}
 		}
+
+		wg.Add(1)
+
+		go func(name string) {
+			sem <- struct{}{}
+			defer func() {
+				<-sem
+				wg.Done()
+			}()
+
+			dm.connections[name].TestConnection(ctx, name, conf.MaxRetries)
+		}(name)
+
 	}
+	wg.Wait()
+	close(sem)
 }
