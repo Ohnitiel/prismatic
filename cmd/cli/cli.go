@@ -193,9 +193,9 @@ func Prismatic(cfg *config.Config) {
 					success, failures :=startQueryingProcess(ctx, cfg, query, environment, noCache, commit, c.Name)
 
 					if len(failures) > 0 && len(success) == 0 {
-						return cli.Exit(locale.L.ExitMessages.AllQueriesFailed, ExitCodeFullFailure)
+						return cli.Exit(locale.L.ExitMessages.FullFail, ExitCodeFullFailure)
 					} else if len(failures) > 0 {
-						return cli.Exit(locale.L.ExitMessages.SomeQueriesFailed, ExitCodePartialFailure)
+						return cli.Exit(locale.L.ExitMessages.PartialFail, ExitCodePartialFailure)
 					} else {
 						return cli.Exit(locale.L.ExitMessages.Success, ExitCodeSuccess)
 					}

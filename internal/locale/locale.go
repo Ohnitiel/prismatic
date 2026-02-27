@@ -58,7 +58,7 @@ type Locale struct {
 	CLI    CliSection    `toml:"cli"`
 	Errors ErrorsSection `toml:"errors"`
 	Logs   LogsSection   `toml:"logs"`
-	Exit   ExitMessages  `toml:"exit_messages"`
+	ExitMessages   ExitMessages  `toml:"exit_messages"`
 }
 
 type LogsSection struct {
