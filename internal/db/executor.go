@@ -32,7 +32,6 @@ func NewExecutor(manager *Manager) *Executor {
 
 // Executes a query on multiple connections in parallel
 // TODO: Add a caching mechanism when DQL
-// TODO: Add a connection column name for DQL
 // TODO: Make more memory efficient
 func (ex *Executor) ParallelExecution(
 	ctx context.Context, workers uint8, query string, useCache bool,
@@ -61,7 +60,7 @@ func (ex *Executor) ParallelExecution(
 	}
 
 	for name, conn := range ex.manager.connections {
-		if !slices.Contains(connections, name) {
+		if len(connections) > 0 && !slices.Contains(connections, name) {
 			continue
 		}
 

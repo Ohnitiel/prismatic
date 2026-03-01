@@ -72,7 +72,7 @@ func (dm *Manager) LoadConnections(ctx context.Context, conf *config.Config, env
 			}
 		}
 
-		if !slices.Contains(connections, name) {
+		if len(connections) > 0 && !slices.Contains(connections, name) {
 			continue
 		}
 
