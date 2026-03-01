@@ -15,10 +15,15 @@ commit = "Confirma (commit) a transação"
 export = "Exportar resultado da consulta para um arquivo"
 run = "Executar consulta"
 check = "Verificar conexões"
+config = "Comandos para edição e visualização da configuração"
+config_install = "Instalar configuração padrão"
+config_show = "Mostrar configuração"
+config_edit = "Editar configuração"
 
 [cli.args]
 export = "[SQL] [DESTINO]"
 run = "[SQL]"
+config_show = "[CHAVE]"
 
 [errors]
 invalid_environment = "Ambiente inválido!"
@@ -33,6 +38,7 @@ no_data_returned = "Nenhum dado retornado"
 success = "Sucesso!"
 full_fail = "Todas as conexões falharam!"
 partial_fail = "Algumas conexões falharam!"
+config_install = "Configuração padrão instalada com sucesso!"
 
 [logs]
 cache_entry_expired = "Entrada de cache expirada"

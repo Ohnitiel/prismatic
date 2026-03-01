@@ -4,7 +4,6 @@ import (
 	"embed"
 	"log"
 	"log/slog"
-	"os"
 
 	"ohnitiel/prismatic/cmd/cli"
 	"ohnitiel/prismatic/internal/config"
@@ -18,9 +17,8 @@ import (
 var cfgPath embed.FS
 
 func main() {
-	installConfig("config")
-
 	cfg, err := config.FromFile("./config/config.toml")
+	cfg.Installer = config.NewInstaller(cfgPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,29 +33,4 @@ func main() {
 	}
 
 	cli.Prismatic(cfg)
-}
-
-func installConfig(dir string) {
-	os.MkdirAll(dir, os.FileMode(0o744))
-
-	subDir, err := cfgPath.ReadDir(dir)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, f := range subDir {
-		fileName := dir + "/" + f.Name()
-		if f.IsDir() {
-			installConfig(fileName)
-		} else {
-			if _, err := os.Stat(fileName); err == nil {
-				continue
-			}
-			file, err := cfgPath.ReadFile(fileName)
-			if err != nil {
-				log.Fatal(err)
-			}
-			os.WriteFile(fileName, file, os.FileMode(0o744))
-		}
-	}
 }

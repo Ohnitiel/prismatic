@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -25,7 +26,10 @@ const (
 	ExitCodePartialFailure = 102
 )
 
-var outputFormats = []string{"xlsx", "json", "csv"}
+var (
+	outputFormats = []string{"xlsx", "json", "csv"}
+	cfg           *config.Config
+)
 
 func validateOutputFormat(format string, l *locale.Locale) error {
 	if !slices.Contains(outputFormats, strings.ToLower(format)) {
@@ -52,7 +56,7 @@ func startQueryingProcess(
 
 func Prismatic(cfg *config.Config) {
 	var environment string
-	var config string
+	var configFile string
 	var outputFormat string
 	var noSingleSheet bool
 	var noSingleFile bool
@@ -70,9 +74,10 @@ func Prismatic(cfg *config.Config) {
 		Description: l.CLI.Description,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "config",
-				Value: "./config/config.toml",
-				Usage: l.CLI.Flags.Config,
+				Name:        "config",
+				Value:       "./config/config.toml",
+				Usage:       l.CLI.Flags.Config,
+				Destination: &configFile,
 			},
 			&cli.StringFlag{
 				Name:        "environment",
@@ -86,10 +91,21 @@ func Prismatic(cfg *config.Config) {
 				Name:    "connections",
 				Aliases: []string{"c"},
 				Usage:   l.CLI.Flags.Connections,
-				Sources: cli.NewValueSourceChain(
-					toml.TOML("", altsrc.NewStringPtrSourcer(&config))),
 				Destination: &connections,
 			},
+		},
+		Before: func(ctx context.Context, c *cli.Command) (context.Context, error) {
+			if configFile == "" {
+				return ctx, nil
+			}
+			if _, ok := os.Stat(configFile); ok != nil {
+				return ctx, fmt.Errorf("err", configFile)
+			}
+			err := cfg.UpdateFromFile(configFile)
+			if err != nil {
+				return ctx, err
+			}
+			return ctx, nil
 		},
 		Commands: []*cli.Command{
 			{
@@ -201,6 +217,53 @@ func Prismatic(cfg *config.Config) {
 					} else {
 						return cli.Exit(locale.L.ExitMessages.Success, ExitCodeSuccess)
 					}
+				},
+			},
+			{
+				Name:  "config",
+				Usage: l.CLI.Commands.Config,
+				Commands: []*cli.Command{
+					{
+						Name:  "install",
+						Usage: l.CLI.Commands.ConfigInstall,
+						Action: func(ctx context.Context, c *cli.Command) error {
+							cfg.Installer.Install()
+							if err != nil {
+								return err
+							}
+							return cli.Exit(locale.L.ExitMessages.ConfigInstall, ExitCodeSuccess)
+						},
+					},
+					{
+						Name:  "show",
+						Usage: l.CLI.Commands.ConfigShow,
+						Arguments: []cli.Argument{
+							&cli.StringArg{
+								Name: "key",
+							},
+						},
+						ArgsUsage: l.CLI.Args.ConfigShow,
+						Action: func(ctx context.Context, c *cli.Command) error {
+							key := c.StringArg("key")
+							cfg.Show(key)
+							return cli.Exit("", ExitCodeSuccess)
+						},
+					},
+					{
+						//TODO: Refactor into calling a web UI for cross-platform support
+						Name:  "edit",
+						Usage: l.CLI.Commands.ConfigEdit,
+						Action: func(ctx context.Context, c *cli.Command) error {
+							editor := os.Getenv("EDITOR")
+							cmd := exec.CommandContext(ctx, editor, "config/config.toml")
+							err := cmd.Run()
+							if err != nil {
+								return err
+							}
+
+							return cli.Exit("", ExitCodeSuccess)
+						},
+					},
 				},
 			},
 		},

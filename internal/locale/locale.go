@@ -21,14 +21,19 @@ type CliFlags struct {
 }
 
 type CliCommands struct {
-	Export string `toml:"export"`
-	Run    string `toml:"run"`
-	Check  string `toml:"check"`
+	Export        string `toml:"export"`
+	Run           string `toml:"run"`
+	Check         string `toml:"check"`
+	Config        string `toml:"config"`
+	ConfigInstall string `toml:"config_install"`
+	ConfigShow    string `toml:"config_show"`
+	ConfigEdit    string `toml:"config_edit"`
 }
 
 type CliArgs struct {
-	Export string `toml:"export"`
-	Run    string `toml:"run"`
+	Export     string `toml:"export"`
+	Run        string `toml:"run"`
+	ConfigShow string `toml:"config_show"`
 }
 
 type CliSection struct {
@@ -49,16 +54,17 @@ type ErrorsSection struct {
 }
 
 type ExitMessages struct {
-	Success     string `toml:"success"`
-	PartialFail string `toml:"partial_fail"`
-	FullFail    string `toml:"full_fail"`
+	Success       string `toml:"success"`
+	PartialFail   string `toml:"partial_fail"`
+	FullFail      string `toml:"full_fail"`
+	ConfigInstall string `toml:"config_install"`
 }
 
 type Locale struct {
-	CLI    CliSection    `toml:"cli"`
-	Errors ErrorsSection `toml:"errors"`
-	Logs   LogsSection   `toml:"logs"`
-	ExitMessages   ExitMessages  `toml:"exit_messages"`
+	CLI          CliSection    `toml:"cli"`
+	Errors       ErrorsSection `toml:"errors"`
+	Logs         LogsSection   `toml:"logs"`
+	ExitMessages ExitMessages  `toml:"exit_messages"`
 }
 
 type LogsSection struct {

@@ -15,10 +15,15 @@ commit = "Commit transaction"
 export = "Export query result to file"
 run = "Run query"
 check = "Checks connections"
+config = "Edit and view configuration"
+config_install = "Install default configuration"
+config_show = "Show configuration"
+config_edit = "Edit configuration"
 
 [cli.args]
 export = "[SQL] [DESTINATION]"
 run = "[SQL]"
+config_show = "[KEY]"
 
 [errors]
 invalid_environment = "Invalid environment!"
@@ -30,9 +35,10 @@ context_deadline = "Context deadline exceeded"
 no_data_returned = "No data returned"
 
 [exit_messages]
-success = "Sucess!"
+success = "Success!"
 full_fail = "All connections failed!"
 partial_fail = "Some connections failed!"
+config_install = "Default configuration installed successfully!"
 
 [logs]
 cache_entry_expired = "Cache entry expired"
