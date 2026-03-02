@@ -1,40 +1,22 @@
 # Prismatic
 
-Prismatic is a tool for executing SQL queries in parallel across multiple PostgreSQL databases.  
+Prismatic is a tool for executing SQL queries in parallel across multiple PostgreSQL databases.
 
-It was built to solve a practical problem: running the same query across 40+ databases and safely exporting or validating results without manually repeating the process.  
+It was built to solve a practical problem: running the same query across 40+ databases and safely exporting or validating results without manually repeating the process.
 
-Designed for multi-tenant and multi-environment setups.  
+Designed for multi-tenant and multi-environment setups.
 
-## Table of Contents
+## Features
 
-- [Why Prismatic?](#why-prismatic)
-- [Core Features](#core-features)
-- [Configuration](#configuration)
-- [Usage](#usage)
-  - [Export Example](#example-exporting-data-from-all-configured-connections)
-  - [Safe Update Example](#example-running-a-safe-update)
-- [Architecture Overview](#architecture-overview)
-- [Project Structure](#project-structure)
-- [Design Principles](#design-principles)
-- [Roadmap](#roadmap)
-- [License](#license)
-
-## Why Prismatic?
-
-* Execute the same query across dozens of databases simultaneously
-* Safe by default (automatic transaction rollback unless committed)
-* Configurable worker pool for controlled concurrency
-
-## Core Features
-
-* Parallel Execution across environments and connections
-* Transactional Safety (rollback by default)
-* Excel Export (single or multiple sheets/files)
-* TOML-based Configuration
-* Internationalized CLI (EN / PT-BR)
+- **Parallel Execution** — run the same query across dozens of databases simultaneously
+- **Transactional Safety** — changes are rolled back by default; commits are always explicit
+- **Configurable Concurrency** — tune the worker pool to control how many connections run at once
+- **Excel Export** — export results to a single sheet, multiple sheets, or multiple files
+- **TOML-based Configuration** — simple, readable config with environment variable support
+- **Internationalized CLI** — available in English and Brazilian Portuguese (PT-BR)
 
 ## Configuration
+
 Initial configuration can be done by running `prismatic config install`.
 
 ### Default Configuration
@@ -49,13 +31,6 @@ connection_column_name = "connection"   # Column name for Excel export
 [paths]
 connections = "./config/connections.toml"
 
-# Cache is yet to be implemented
-# [cache]
-# use_cache = true
-# time_to_live = 600 # Described in seconds
-
-# By default, logs to stderr and file
-# Will be configurable in the future
 [logger]
 file_level = "debug"
 file_output = "./log/prismatic.log"
@@ -63,10 +38,12 @@ console_level = "info"
 console_output = "stderr"
 ```
 
-### Configuration Example
-Connections are defined in `config/connections.toml`.
+### Connections
+
+Connections are defined in `config/connections.toml`. Each connection supports multiple environments, and environment-level values override the base connection values.
 
 Basic configuration:
+
 ```toml
 [my_conn]
 engine = "postgresql"
@@ -79,7 +56,8 @@ host = "10.0.0.10"
 port = 5432
 ```
 
-Inheritance overrides:
+With environment-level overrides:
+
 ```toml
 [my_conn]
 engine = "postgresql"
@@ -101,63 +79,55 @@ database = "staging_db"
 
 ## Usage
 
-By default, Prismatic runs the given query in all configured staging environments connections.
+By default, Prismatic runs the given query across all configured connections in the staging environment.
 
-### Generic Flags:
+### Generic Flags
+
 ```
-    --connections, -c   String array of connections to use (eg. "my_conn" or "my_conn,my_other_conn")
-    --environment, -e   Environment to use (eg. "production")
+    --connections, -c   String array of connections to use (e.g. "my_conn" or "my_conn,my_other_conn")
+    --environment, -e   Environment to use (e.g. "production")
     --config            Path to configuration file (default: "./config/config.toml")
 ```
 
 ### Exporting Data
 
-`prismatic export` will export the given query to an Excel file.
+`prismatic export` runs the given query and exports results to an Excel file.
 
-#### Export Flags:
 ```
     --no-single-sheet      Export to multiple sheets in the same workbook
     --no-single-file       Export to multiple files instead of a single sheet
 ```
 
-#### Example: Exporting Data
 ```bash
-# This saves the results with `connection_column_name` config as header and connections names as values
+# Results include a column (named by connection_column_name) identifying which connection each row came from
 prismatic export \
   "SELECT id, name FROM patients WHERE active = true" \
   results.xlsx
 ```
 
-#### Output Behavior
+### Running a Query
 
-* Executes in parallel
-* Rolls back transaction automatically
+`prismatic run` executes the given query across all configured connections. Changes are rolled back by default — use `--commit` to persist them.
 
-### Executing a Query
-
-`prismatic run` will execute the given query in all configured connections.
-
-#### Run Flags:
 ```
     --commit           Persist changes
 ```
 
-### Example: Running a Safe Update
 ```bash
+# Dry run (safe by default — changes are rolled back)
 prismatic run \
   "UPDATE settings SET value = 'true' WHERE key = 'maintenance'"
-```
 
-By default, changes are rolled back.
-
-To persist:
-```bash
+# Persist changes
 prismatic run \
   "UPDATE settings SET value = 'true' WHERE key = 'maintenance'" \
   --commit
 ```
 
-### Architecture Overview
+## Architecture
+
+Prismatic follows a linear pipeline from CLI input to result output:
+
 ```
 CLI
   ↓
@@ -165,7 +135,7 @@ Core Engine
   ↓
 Worker Pool (configurable)
   ↓
-Database (PostgreSQL / SQLite)
+Database (PostgreSQL)
   ↓
 Result Aggregator
   ↓
@@ -173,6 +143,7 @@ Excel Exporter
 ```
 
 ## Project Structure
+
 ```
 cmd/cli/          → CLI entry point
 internal/config/  → Configuration loading
@@ -184,20 +155,19 @@ internal/logger/  → Structured logging
 
 ## Design Principles
 
-* Local-first
-* No remote services
-* No hidden state
-* Explicit commits
-* Predictable concurrency
+- Local-first
+- No remote services
+- No hidden state
+- Explicit commits
+- Predictable concurrency
 
 ## Roadmap
 
-* [ ] Add config command for creating/showing/editing config files
-* [ ] Schema metadata caching by version
-* [ ] Backend-driven SQL autocomplete
-* [ ] Local desktop UI
-* [ ] Multi-connection result comparison
+- Cross-environment query execution
+- Local desktop UI
+- Backend-driven SQL autocomplete
+- Schema metadata caching by version
 
 ## License
 
-MIT
+[MIT](./LICENSE)
