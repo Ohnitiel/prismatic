@@ -82,10 +82,9 @@ func Prismatic(cfg *config.Config) {
 			&cli.StringFlag{
 				Name:        "environment",
 				Aliases:     []string{"e"},
-				Value:       "replica",
+				Value:       "staging",
 				Usage:       l.CLI.Flags.Environment,
 				Destination: &environment,
-				Sources:     cli.NewValueSourceChain(toml.TOML("", altsrc.StringSourcer("path"))),
 			},
 			&cli.StringSliceFlag{
 				Name:    "connections",
