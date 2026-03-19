@@ -15,8 +15,6 @@ import (
 	"ohnitiel/prismatic/internal/export"
 	"ohnitiel/prismatic/internal/locale"
 
-	"github.com/urfave/cli-altsrc/v3"
-	toml "github.com/urfave/cli-altsrc/v3/toml"
 	"github.com/urfave/cli/v3"
 )
 
@@ -94,9 +92,6 @@ func Prismatic(cfg *config.Config) {
 			},
 		},
 		Before: func(ctx context.Context, c *cli.Command) (context.Context, error) {
-			if configFile == "" {
-				return ctx, nil
-			}
 			if _, ok := os.Stat(configFile); ok != nil {
 				return ctx, fmt.Errorf("err", configFile)
 			}
@@ -104,6 +99,8 @@ func Prismatic(cfg *config.Config) {
 			if err != nil {
 				return ctx, err
 			}
+
+			cfg.LoadConnections()
 			return ctx, nil
 		},
 		Commands: []*cli.Command{
