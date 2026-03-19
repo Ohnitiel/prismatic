@@ -36,6 +36,21 @@ func validateOutputFormat(format string, l *locale.Locale) error {
 	return nil
 }
 
+func verifyQueryArgument(query string) (string, error) {
+	if file, err := os.Stat(query); err == nil {
+		if file.IsDir() {
+			return "", fmt.Errorf(locale.L.Errors.QueryIsDirectory, query)
+		}
+		queryBytes, err :=os.ReadFile(file.Name())
+		if err != nil {
+			return "", err
+		}
+		return string(queryBytes), nil
+	}
+
+	return query, nil
+}
+
 func startQueryingProcess(
 	ctx context.Context, cfg *config.Config, query string,
 	environment string, noCache bool, commit bool, command string,
@@ -152,7 +167,11 @@ func Prismatic(cfg *config.Config) {
 					},
 				}},
 				Action: func(ctx context.Context, c *cli.Command) error {
-					query := c.StringArg("query")
+					query, err := verifyQueryArgument(c.StringArg("query"))
+					if err != nil {
+						return err
+					}
+
 					output := c.StringArg("output")
 
 					if outputFormat == "" {

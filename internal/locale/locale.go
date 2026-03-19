@@ -51,6 +51,7 @@ type ErrorsSection struct {
 	QueryFailed         string `toml:"query_failed"`
 	ContextDeadline     string `toml:"context_deadline"`
 	NoDataReturned      string `toml:"no_data_returned"`
+	QueryIsDirectory    string `toml:"query_is_directory"`
 }
 
 type ExitMessages struct {

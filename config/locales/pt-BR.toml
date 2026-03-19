@@ -33,6 +33,7 @@ connection_failed = "Falha na conexão"
 query_failed = "Falha na execução da consulta"
 context_deadline = "Tempo limite do contexto excedido"
 no_data_returned = "Nenhum dado retornado"
+query_is_directory = "Query informado é um diretório"
 
 [exit_messages]
 success = "Sucesso!"

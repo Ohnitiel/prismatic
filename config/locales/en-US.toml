@@ -33,6 +33,7 @@ connection_failed = "Connection failed"
 query_failed = "Query execution failed"
 context_deadline = "Context deadline exceeded"
 no_data_returned = "No data returned"
+query_is_directory = "Given query is a directory"
 
 [exit_messages]
 success = "Success!"
